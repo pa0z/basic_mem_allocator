@@ -21,6 +21,7 @@ header_t *get_free_block(size_t size){
     while(current){
         if (current->s.is_free && current->s.size >=size)
             return current;
+        current = current->s.next;
     }
     return NULL;
 }
