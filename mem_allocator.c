@@ -1,5 +1,6 @@
 //#include <bits/pthreadtypes.h>
 #include <pthread.h>
+#include <time.h>
 #include <unistd.h>
 #include <stddef.h>
 
@@ -60,4 +61,36 @@ void *malloc(size_t size){
 	pthread_mutex_unlock(&global_malloc_lock);
 
 	return (void*)(header + 1); // dont want to point to header
+}
+
+void free(void *block){
+    header_t *header, *tmp;
+    void *progbreak;
+
+    if (!block)
+        return;
+    pthread_mutex_lock(&global_malloc_lock);
+    header = (header_t*)block - 1;
+
+    progbreak = sbrk(0);
+    if ((char*)block + header->s.size == progbreak){
+        if (head == tail){
+            head = tail = NULL;
+        } else {
+            tmp = head;
+            while (tmp){
+    			if (tmp->s.next == tail){
+                    tmp->s.next = NULL;
+                    tail = tmp;
+                }
+    			tmp = tmp->s.next;
+            }
+        }
+        sbrk(0 - sizeof(header_t) - header->s.size);
+        pthread_mutex_unlock(&global_malloc_lock);
+        return;
+    }
+    // if block isn't at end of heap, this gotta make do
+    header->s.is_free = 1;
+    pthread_mutex_unlock(&global_malloc_lock);
 }
