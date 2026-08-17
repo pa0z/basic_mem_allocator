@@ -40,15 +40,15 @@ void *malloc(size_t size){
 	if (header){
 	header->s.is_free = 0;
 	pthread_mutex_unlock(&global_malloc_lock);
-	return (void*)(header + 1);
+	return (void*)(header + 1); // returns mem address at end of header (cuz +1 pointer arith) cast as regular pointer
 	}
 	total_size = sizeof(header_t) + size;
-	block = sbrk(total_size);
+	block = sbrk(total_size); // allocating block of mem, accounting for header size
 	if (block == (void*) -1){
 	    pthread_mutex_unlock(&global_malloc_lock);
 		return NULL;
 	}
-	header = block;
+	header = block; //sbrk returns start mem address of allocation, so pointing to start of block here
 	header->s.size = size;
 	header->s.is_free = 0;
 	header->s.next = NULL;
@@ -59,5 +59,5 @@ void *malloc(size_t size){
 	tail = header;
 	pthread_mutex_unlock(&global_malloc_lock);
 
-	return (void*)(header + 1);
+	return (void*)(header + 1); // dont want to point to header
 }
